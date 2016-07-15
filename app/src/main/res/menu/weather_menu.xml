@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:icon="@drawable/background"
+        android:id="@+id/changeCity_item"
+        android:title="切换城市"/>
+
+    <item
+        android:icon="@drawable/background"
+        android:id="@+id/reflush_item"
+        android:title="刷新天气"/>
+</menu>
