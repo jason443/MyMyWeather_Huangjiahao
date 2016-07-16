@@ -205,6 +205,11 @@ public class WeatherActivity extends Activity{
                     }
                 }).start();
                 break;
+            case R.id.future_item:
+                Intent intent1 = new Intent(WeatherActivity.this, FutureActivity.class);
+                intent1.putExtra("cityName",setCityName);
+                startActivity(intent1);
+                break;
             default:
                 break;
         }

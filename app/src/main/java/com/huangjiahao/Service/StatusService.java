@@ -20,8 +20,8 @@ import android.os.SystemClock;
 import android.util.Log;
 
 import com.huangjiahao.R;
+import com.huangjiahao.Receiver.AlarmReceiver;
 import com.huangjiahao.activity.WeatherActivity;
-import com.huangjiahao.util.AlarmReceiver;
 import com.huangjiahao.util.HttpCallbackListener;
 import com.huangjiahao.util.HttpURLUtil;
 import com.huangjiahao.util.JSONDecode;
@@ -34,7 +34,7 @@ import java.util.Map;
  */
 public class StatusService extends Service {
 
-    public static final int SHOW_RESPONSE = 0;
+    public static final int SHOW_RESPONDE = 0;
     public static final int ERROR_RESPONSE = 1;
 
     private ServiceBroadcastReceiver serviceBroadcastReceiver = null;
@@ -44,9 +44,9 @@ public class StatusService extends Service {
     private Handler handler = new Handler() {
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case SHOW_RESPONSE:
-                    String response = (String)msg.obj;
+                case SHOW_RESPONDE:
                     stopForeground(true);
+                    String response = (String)msg.obj;
                     Map<String, String> map = JSONDecode.serviceInfoDecode(response);
                     Intent notificationIntent = new Intent(StatusService.this, WeatherActivity.class);
                     PendingIntent pendingIntent = PendingIntent.getActivity(StatusService.this, 0 , notificationIntent, 0);
@@ -57,7 +57,6 @@ public class StatusService extends Service {
                     startForeground(3,notification);
                     break;
                 case ERROR_RESPONSE:
-                    Log.d("StatusService","ERROR_RESPONSE");
                     break;
                 default:
                     break;
@@ -85,17 +84,15 @@ public class StatusService extends Service {
 
 
     public int onStartCommand(Intent intent, int flags, int startId) {
-        flags = START_STICKY;
-        final String adress = ToGetHttpAdress.excute(cityName);
-
         new Thread(new Runnable() {
             @Override
             public void run() {
+                String adress = ToGetHttpAdress.excute(cityName);
                 HttpURLUtil.sendHttpRequest(adress, new HttpCallbackListener() {
                     @Override
                     public void onFinish(String response) {
                         Message message = new Message();
-                        message.what = SHOW_RESPONSE;
+                        message.what = SHOW_RESPONDE;
                         message.obj = response;
                         handler.sendMessage(message);
                     }
@@ -109,8 +106,9 @@ public class StatusService extends Service {
                 });
             }
         }).start();
+
         AlarmManager manager = (AlarmManager) getSystemService(ALARM_SERVICE);
-        int sixHour = 60*1000;
+        int sixHour = 60*60*1000;
         long triggerAtTime = SystemClock.elapsedRealtime() + sixHour;
         Intent i = new Intent(this, AlarmReceiver.class);
         PendingIntent pi = PendingIntent.getBroadcast(this, 0, i, 0);

@@ -10,4 +10,9 @@
         android:icon="@drawable/background"
         android:id="@+id/reflush_item"
         android:title="刷新天气"/>
+
+    <item
+        android:icon="@drawable/background"
+        android:id="@+id/future_item"
+        android:title="未来七天预报"/>
 </menu>

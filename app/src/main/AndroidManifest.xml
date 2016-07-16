@@ -20,12 +20,9 @@
 
         <activity android:name=".activity.PickProvinceActivity"/>
         <activity android:name=".activity.PickCityActivity"/>
-        <service android:name=".Service.StatusService">
-            <intent-filter android:priority="1000">
-            </intent-filter>
-        </service>
-        <receiver android:name=".util.AlarmReceiver">
-        </receiver>
+        <activity android:name=".activity.FutureActivity"/>
+        <service android:name=".Service.StatusService"></service>
+        <receiver android:name=".Receiver.AlarmReceiver"></receiver>
     </application>
     <uses-permission android:name="android.permission.INTERNET"/>
 

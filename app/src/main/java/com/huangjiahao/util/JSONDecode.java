@@ -91,4 +91,26 @@ public class JSONDecode {
         }
         return map;
     }
+
+    public static ArrayList<Map<String, String>> futureDecode(String response) {
+        ArrayList<Map<String,String>> returnList = new ArrayList<>();
+        try{
+            JSONObject obj = new JSONObject(response);
+            Log.d("JSONObject",response);
+            JSONObject result = obj.getJSONObject("result");
+            String futureString = result.getString("future");
+            JSONArray future = new JSONArray(futureString);
+            for(int i=0; i<future.length(); i++) {
+                Map<String,String> map = new HashMap<>();
+                map.put("week",future.getJSONObject(i).getString("week"));
+                map.put("temperature",future.getJSONObject(i).getString("temperature"));
+                map.put("weather",future.getJSONObject(i).getString("weather"));
+                returnList.add(map);
+            }
+            Log.d("JSONDecode",returnList.get(1).get("week"));
+        }catch(Exception e) {
+            e.printStackTrace();
+        }
+        return returnList;
+    }
 }

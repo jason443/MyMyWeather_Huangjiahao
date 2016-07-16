@@ -43,7 +43,6 @@ public class PickCityActivity extends Activity {
                 case SHOW_RESPONSE:
                     String response = (String) msg.obj;
                     ArrayList<City> cities = JSONDecode.cityDecode(response,provinceName);
-                    Log.d("PickCity1111",provinceName + "2222");
                     final ArrayList<City> showList = ListChangeUtil.toGetCity(cities);
                     PickCityAdapter adapter = new PickCityAdapter(PickCityActivity.this,showList);
                     mPickCityLv.setAdapter(adapter);
