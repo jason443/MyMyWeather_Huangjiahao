@@ -96,7 +96,6 @@ public class JSONDecode {
         ArrayList<Map<String,String>> returnList = new ArrayList<>();
         try{
             JSONObject obj = new JSONObject(response);
-            Log.d("JSONObject",response);
             JSONObject result = obj.getJSONObject("result");
             String futureString = result.getString("future");
             JSONArray future = new JSONArray(futureString);

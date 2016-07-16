@@ -56,6 +56,18 @@ public class WeatherActivity extends Activity{
                         mShowWeather.setText(map.get("weather").toString());
                         mShowTemp.setText(map.get("todayTemp").toString());
                         mShowCityName.setText(setCityName);
+                        int i = Integer.parseInt(map.get("id").toString());
+                        if(i == 00) {
+                            mShowPicture.setImageResource(R.drawable.sunsmile);
+                        } else if(((i>=03)&&(i<=12))||(i == 19)||((i>=21)&&(i<=25))) {
+                            mShowPicture.setImageResource(R.drawable.rain);
+                        } else if(((i>=13)&&(i<=17))||((i>=26)&&(i<=28))) {
+                            mShowPicture.setImageResource(R.drawable.snow);
+                        } else if(((i>=01)&&(i<=02))||(i == 18)) {
+                            mShowPicture.setImageResource(R.drawable.cloud);
+                        }else {
+                            mShowPicture.setImageResource(R.drawable.sand);
+                        }
                     } else {
                         Toast.makeText(WeatherActivity.this, "数据解析错误！",Toast.LENGTH_SHORT).show();
                     }
@@ -77,6 +89,7 @@ public class WeatherActivity extends Activity{
         setContentView(com.huangjiahao.R.layout.activity_weather);
         Intent bindIntent = new Intent(this, StatusService.class);
         startService(bindIntent);
+        mShowPicture = (ImageView) findViewById(R.id.weatherActivity_iv_weatherPicture);
         mMenuButton = (ImageButton)findViewById(R.id.weatherActivity_bt_menu);
         mMenuButton.setOnClickListener(new View.OnClickListener() {
             @Override
