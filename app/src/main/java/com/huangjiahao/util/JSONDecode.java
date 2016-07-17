@@ -3,6 +3,7 @@ package com.huangjiahao.util;
 import android.util.Log;
 
 import com.huangjiahao.bean.City;
+import com.huangjiahao.bean.FutureData;
 import com.huangjiahao.bean.Province;
 
 import org.json.JSONArray;
@@ -112,4 +113,23 @@ public class JSONDecode {
         }
         return returnList;
     }
+
+    public static List<FutureData> futureDecode1(String response) {
+        List<FutureData> returnList = new ArrayList<>();
+
+        try{
+            JSONObject obj = new JSONObject(response);
+            JSONObject result = obj.getJSONObject("result");
+            String future= result.getString("future");
+            JSONArray array = new JSONArray(future);
+            for(int i=0; i<array.length();i++) {
+                FutureData futureData = new FutureData(array.getJSONObject(i).getString("week"), array.getJSONObject(i).getString("weather"), array.getJSONObject(i).getString("temperature"));
+                returnList.add(futureData);
+            }
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        return returnList;
+    }
+
 }
