@@ -55,6 +55,7 @@ public class StatusService extends Service {
                     builder.setSmallIcon(R.drawable.small).setContentText(map.get("weather")).setContentTitle(map.get("cityName")).setContentIntent(pendingIntent);
                     Notification notification = builder.getNotification();
                     startForeground(3,notification);
+                    Log.d("Service","111111111");
                     break;
                 case ERROR_RESPONSE:
                     break;
@@ -108,7 +109,7 @@ public class StatusService extends Service {
         }).start();
 
         AlarmManager manager = (AlarmManager) getSystemService(ALARM_SERVICE);
-        int sixHour = 60*60*1000;
+        int sixHour = 6*60*60*1000;
         long triggerAtTime = SystemClock.elapsedRealtime() + sixHour;
         Intent i = new Intent(this, AlarmReceiver.class);
         PendingIntent pi = PendingIntent.getBroadcast(this, 0, i, 0);

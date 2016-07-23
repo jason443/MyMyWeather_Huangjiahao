@@ -13,7 +13,7 @@ public class AlarmReceiver extends BroadcastReceiver {
 
     public void onReceive(Context context, Intent intent) {
         Intent i = new Intent(context, StatusService.class);
-        context.startActivity(i);
+        context.startService(i);
     }
 
 }
