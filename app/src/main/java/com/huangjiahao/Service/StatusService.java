@@ -17,15 +17,21 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.SystemClock;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.Volley;
 import com.huangjiahao.R;
 import com.huangjiahao.Receiver.AlarmReceiver;
 import com.huangjiahao.activity.WeatherActivity;
+import com.huangjiahao.bean.Today;
+import com.huangjiahao.util.GsonDecode;
 import com.huangjiahao.util.HttpCallbackListener;
 import com.huangjiahao.util.HttpURLUtil;
 import com.huangjiahao.util.JSONDecode;
 import com.huangjiahao.util.ToGetHttpAdress;
+import com.huangjiahao.util.VolleyRequest;
 
 import java.util.Map;
 
@@ -34,30 +40,27 @@ import java.util.Map;
  */
 public class StatusService extends Service {
 
-    public static final int SHOW_RESPONDE = 0;
-    public static final int ERROR_RESPONSE = 1;
-
     private ServiceBroadcastReceiver serviceBroadcastReceiver = null;
-    private OnCreateReceiver onCreateReceiver = null;
+
+    private RequestQueue queue;
+
     private String cityName = "广州";
 
     private Handler handler = new Handler() {
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case SHOW_RESPONDE:
+                case 0:
                     stopForeground(true);
                     String response = (String)msg.obj;
-                    Map<String, String> map = JSONDecode.serviceInfoDecode(response);
+                    Today today = GsonDecode.todayDecode(response);
                     Intent notificationIntent = new Intent(StatusService.this, WeatherActivity.class);
                     PendingIntent pendingIntent = PendingIntent.getActivity(StatusService.this, 0 , notificationIntent, 0);
                     Notification.Builder builder = new Notification.Builder(StatusService.this);
-                    cityName = map.get("cityNameSolo");
-                    builder.setSmallIcon(R.drawable.small).setContentText(map.get("weather")).setContentTitle(map.get("cityName")).setContentIntent(pendingIntent);
+                    builder.setSmallIcon(R.drawable.small).setContentText("现在天气是" + today.getWeather() + "，气温为" + today.getTemperature()).setContentIntent(pendingIntent).setContentTitle("你在" + today.getCity());
                     Notification notification = builder.getNotification();
-                    startForeground(3,notification);
-                    Log.d("Service","111111111");
+                    startForeground(2,notification);
                     break;
-                case ERROR_RESPONSE:
+                case 1:
                     break;
                 default:
                     break;
@@ -67,15 +70,13 @@ public class StatusService extends Service {
 
     public void onCreate() {
         super.onCreate();
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction("com.weather.REFLUSH");
-        serviceBroadcastReceiver = new ServiceBroadcastReceiver();
-        registerReceiver(serviceBroadcastReceiver, intentFilter);
 
-        IntentFilter intentFilter1 = new IntentFilter();
-        intentFilter1.addAction("com.weather.ONCREATE");
-        onCreateReceiver = new OnCreateReceiver();
-        registerReceiver(onCreateReceiver, intentFilter1);
+        queue = Volley.newRequestQueue(this);
+
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction("com.broadcast.PLACE_CHANGE");
+        serviceBroadcastReceiver = new ServiceBroadcastReceiver();
+        registerReceiver(serviceBroadcastReceiver,intentFilter);
 
     }
 
@@ -85,28 +86,8 @@ public class StatusService extends Service {
 
 
     public int onStartCommand(Intent intent, int flags, int startId) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                String adress = ToGetHttpAdress.excute(cityName);
-                HttpURLUtil.sendHttpRequest(adress, new HttpCallbackListener() {
-                    @Override
-                    public void onFinish(String response) {
-                        Message message = new Message();
-                        message.what = SHOW_RESPONDE;
-                        message.obj = response;
-                        handler.sendMessage(message);
-                    }
-
-                    @Override
-                    public void onError(Exception e) {
-                        Message message = new Message();
-                        message.what = ERROR_RESPONSE;
-                        handler.sendMessage(message);
-                    }
-                });
-            }
-        }).start();
+        String address = ToGetHttpAdress.excute(cityName);
+        VolleyRequest.sendVolleyRequest(address, queue, handler);
 
         AlarmManager manager = (AlarmManager) getSystemService(ALARM_SERVICE);
         int sixHour = 6*60*60*1000;
@@ -120,37 +101,22 @@ public class StatusService extends Service {
     public void onDestroy() {
         super.onDestroy();
         unregisterReceiver(serviceBroadcastReceiver);
-        unregisterReceiver(onCreateReceiver);
     }
 
 
     class ServiceBroadcastReceiver extends BroadcastReceiver {
         public void onReceive(Context context, Intent intent) {
             stopForeground(true);
-            String response = intent.getStringExtra("refushInfo");
-            Map<String, String> map = JSONDecode.serviceInfoDecode(response);
             Intent notificationIntent = new Intent(StatusService.this, WeatherActivity.class);
             PendingIntent pendingIntent = PendingIntent.getActivity(StatusService.this, 0 , notificationIntent, 0);
             Notification.Builder builder = new Notification.Builder(StatusService.this);
-            cityName = map.get("cityNameSolo");
-            builder.setSmallIcon(R.drawable.small).setContentText(map.get("weather")).setContentTitle(map.get("cityName")).setContentIntent(pendingIntent);
+            cityName = intent.getStringExtra("cityName");
+            builder.setSmallIcon(R.drawable.small).setContentText("现在天气是" + intent.getStringExtra("weather") + "，气温为" + intent.getStringExtra("temp")).setContentTitle("你在" + intent.getStringExtra("cityName")).setContentIntent(pendingIntent);
             Notification notification = builder.getNotification();
-            startForeground(2,notification);
+            startForeground(1,notification);
+            Log.d("StatusService","1111111111");
         }
     }
 
-    class OnCreateReceiver extends BroadcastReceiver {
-        public void onReceive(Context context, Intent intent) {
-            String response = intent.getStringExtra("createInfo");
-            Map<String, String> map = JSONDecode.serviceInfoDecode(response);
-            Intent notificationIntent = new Intent(StatusService.this, WeatherActivity.class);
-            PendingIntent pendingIntent = PendingIntent.getActivity(StatusService.this, 0 , notificationIntent, 0);
-            Notification.Builder builder = new Notification.Builder(StatusService.this);
-            cityName = map.get("cityNameSolo");
-            builder.setSmallIcon(R.drawable.small).setContentText(map.get("weather")).setContentTitle(map.get("cityName")).setContentIntent(pendingIntent);
-            Notification notification = builder.getNotification();
-            startForeground(1,notification);
-        }
-    }
 
 }

@@ -5,10 +5,15 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v4.view.ViewPager;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -20,163 +25,73 @@ import android.widget.Toast;
 
 import com.huangjiahao.R;
 import com.huangjiahao.Service.StatusService;
+import com.huangjiahao.adapter.FragAdapter;
+import com.huangjiahao.fragment.MyFragment;
 import com.huangjiahao.util.HttpCallbackListener;
 import com.huangjiahao.util.HttpURLUtil;
 import com.huangjiahao.util.JSONDecode;
 import com.huangjiahao.util.ToGetHttpAdress;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-public class WeatherActivity extends Activity{
+public class WeatherActivity extends FragmentActivity{
 
-    public static final int SHOW_RESPONSE = 0;
-    public static final int ERROR_RESPONSE = 1;
+    private ViewPager mViePager;
+    private FragmentManager fm;
+    private FragAdapter fragAdapter;
 
-    private String setCityName;
-
-    private TextView mShowCityName;
-    private ImageView mShowPicture;
-    private TextView mShowWeather;
-    private TextView mShowTemp;
-    private ImageButton mMenuButton;
-    private ImageButton mCancleButton;
-
+    private LocalBroadcastManager localBroadcastManager;
     private IntentFilter intentFilter;
     private CallBackBroadcast callBackBroadcast;
-    private LocalBroadcastManager localBroadcastManager;
+    private SharedPreferences sharedPreferences;
 
-    private Handler handler = new Handler() {
-        public void handleMessage(Message msg) {
-            switch(msg.what) {
-                case SHOW_RESPONSE:
-                    String response = (String) msg.obj;
-                    Map map = (HashMap)JSONDecode.nowInfoDecode(response);
-                    if(map != null) {
-                        mShowWeather.setText(map.get("weather").toString());
-                        mShowTemp.setText(map.get("todayTemp").toString());
-                        mShowCityName.setText(setCityName);
-                        int i = Integer.parseInt(map.get("id").toString());
-                        if(i == 00) {
-                            mShowPicture.setImageResource(R.drawable.sunsmile);
-                        } else if(((i>=03)&&(i<=12))||(i == 19)||((i>=21)&&(i<=25))) {
-                            mShowPicture.setImageResource(R.drawable.rain);
-                        } else if(((i>=13)&&(i<=17))||((i>=26)&&(i<=28))) {
-                            mShowPicture.setImageResource(R.drawable.snow);
-                        } else if(((i>=01)&&(i<=02))||(i == 18)) {
-                            mShowPicture.setImageResource(R.drawable.cloud);
-                        }else {
-                            mShowPicture.setImageResource(R.drawable.sand);
-                        }
-                    } else {
-                        Toast.makeText(WeatherActivity.this, "数据解析错误！",Toast.LENGTH_SHORT).show();
-                    }
-                    break;
-                case ERROR_RESPONSE:
-                    Toast.makeText(WeatherActivity.this, "网络连接错误！",Toast.LENGTH_SHORT).show();
-                    break;
-                default:
-                    break;
-            }
-        }
-    };
-
-    @Override
     protected void onCreate(Bundle savedInstanceState) {
-        final String cityName;
-        final String adress;
         super.onCreate(savedInstanceState);
-        setContentView(com.huangjiahao.R.layout.activity_weather);
-        Intent bindIntent = new Intent(this, StatusService.class);
+        setContentView(R.layout.activity_weather);
+        mViePager = (ViewPager) findViewById(R.id.weather_vp_show);
+        fm = getSupportFragmentManager();
+
+        Intent bindIntent = new Intent(this, StatusService.class);//开启服务
         startService(bindIntent);
-        mShowPicture = (ImageView) findViewById(R.id.weatherActivity_iv_weatherPicture);
-        mMenuButton = (ImageButton)findViewById(R.id.weatherActivity_bt_menu);
-        mMenuButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                openOptionsMenu();
-            }
-        });
-        mCancleButton = (ImageButton) findViewById(R.id.weatherActivity_bt_finish);
-        mCancleButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                finish();
-            }
-        });
-        mShowCityName = (TextView)findViewById(R.id.weatherActivity_tv_cityName);
-        mShowPicture = (ImageView)findViewById(R.id.weatherActivity_iv_weatherPicture);
-        mShowWeather = (TextView)findViewById(R.id.weatherActivity_tv_showWeather);
-        mShowTemp = (TextView)findViewById(R.id.weatherActivity_tv_showTemp);
+
+        sharedPreferences = getSharedPreferences("cityData", MODE_PRIVATE);
+        boolean flags = sharedPreferences.getBoolean("flags", true);
+        if(flags) { //初始化
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putBoolean("flags", false);
+            editor.putString("data0","广州");
+            editor.putInt("count",0);
+            editor.commit();
+        }
+
+        int count = sharedPreferences.getInt("count", 0); // 取出
+        List<String> list = new ArrayList<>();
+        for(int i=0; i<count+1; i++) {
+            list.add(sharedPreferences.getString("data"+i, null));
+        }
+
+        List<MyFragment> myFragments = new ArrayList<>(); // 初始化需要加载的fragment
+        for(int i=0; i<list.size(); i++) {
+            myFragments.add(new MyFragment());
+        }
+
+        fragAdapter = new FragAdapter(fm, myFragments);
+        mViePager.setAdapter(fragAdapter);
+
+        for(int i=0; i<myFragments.size(); i++) { // 向fragment传递对应城市信息数据
+            Bundle bundle = new Bundle();
+            bundle.putString("cityName", list.get(i));
+            myFragments.get(i).setArguments(bundle);
+        }
+
         localBroadcastManager = LocalBroadcastManager.getInstance(this);
         intentFilter = new IntentFilter();
-        intentFilter.addAction("com.huangjiahao.broadcast.CITYNAME");
+        intentFilter.addAction("com.broadcast.CITY_PICK");
         callBackBroadcast = new CallBackBroadcast();
         localBroadcastManager.registerReceiver(callBackBroadcast,intentFilter);
-        cityName = "广州";
-        adress = ToGetHttpAdress.excute("广州");
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                HttpURLUtil.sendHttpRequest(adress, new HttpCallbackListener() {
-                    @Override
-                    public void onFinish(String response) {
-                        Message message = new Message();
-                        message.what = SHOW_RESPONSE;
-                        message.obj = response;
-                        handler.sendMessage(message);
-                        setCityName = cityName;
-                        Intent broadcastIntent = new Intent("com.weather.ONCREATE");
-                        broadcastIntent.putExtra("createInfo",response);
-                        sendBroadcast(broadcastIntent);
-                    }
-
-                    @Override
-                    public void onError(Exception e) {
-                        Message message = new Message();
-                        message.what = ERROR_RESPONSE;
-                        handler.sendMessage(message);
-                    }
-                });
-            }
-        }).start();
-    }
-
-    protected void onDestroy() {
-        super.onDestroy();
-        localBroadcastManager.unregisterReceiver(callBackBroadcast);
-    }
-
-    class CallBackBroadcast extends BroadcastReceiver {
-        public void onReceive(Context context, Intent intent) {
-            final String cityName = intent.getStringExtra("cityName");
-            final String adress = ToGetHttpAdress.excute(cityName);
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    HttpURLUtil.sendHttpRequest(adress, new HttpCallbackListener() {
-                        @Override
-                        public void onFinish(String response) {
-                            Message message = new Message();
-                            message.what = SHOW_RESPONSE;
-                            message.obj = response;
-                            handler.sendMessage(message);
-                            setCityName = cityName;
-                            Intent broadcastIntent = new Intent("com.weather.REFLUSH");
-                            broadcastIntent.putExtra("refushInfo",response);
-                            sendBroadcast(broadcastIntent);
-                        }
-
-                        @Override
-                        public void onError(Exception e) {
-                            Message message = new Message();
-                            message.what = ERROR_RESPONSE;
-                            handler.sendMessage(message);
-                        }
-                    });
-                }
-            }).start();
-        }
     }
 
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -184,43 +99,21 @@ public class WeatherActivity extends Activity{
         return true;
     }
 
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
+    public boolean onOptionsItemSelected(MenuItem menuItem) {
+        switch (menuItem.getItemId()) {
             case R.id.changeCity_item:
-                final Intent intent = new Intent(WeatherActivity.this, PickProvinceActivity.class);
+                Intent intent = new Intent(WeatherActivity.this,PickProvinceActivity.class);
                 startActivity(intent);
                 break;
             case R.id.reflush_item:
-                Toast.makeText(WeatherActivity.this, "正在刷新",Toast.LENGTH_SHORT).show();
-                final String adress = ToGetHttpAdress.excute(setCityName);
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        HttpURLUtil.sendHttpRequest(adress, new HttpCallbackListener() {
-                            @Override
-                            public void onFinish(String response) {
-                                Message message = new Message();
-                                message.what = SHOW_RESPONSE;
-                                message.obj = response;
-                                handler.sendMessage(message);
-                                Intent broadcastIntent = new Intent("com.weather.REFLUSH");
-                                broadcastIntent.putExtra("refushInfo",response);
-                                sendBroadcast(broadcastIntent);
-                            }
-
-                            @Override
-                            public void onError(Exception e) {
-                                Message message = new Message();
-                                message.what = ERROR_RESPONSE;
-                                handler.sendMessage(message);
-                            }
-                        });
-                    }
-                }).start();
+                MyFragment myFragment =(MyFragment) fragAdapter.fragment;
+                myFragment.onRefresh();
                 break;
             case R.id.future_item:
+                MyFragment myFragment1 = (MyFragment) fragAdapter.fragment;
+                String cityName = myFragment1.getmCityName();
                 Intent intent1 = new Intent(WeatherActivity.this, FutureActivity.class);
-                intent1.putExtra("cityName",setCityName);
+                intent1.putExtra("cityName", cityName);
                 startActivity(intent1);
                 break;
             default:
@@ -228,5 +121,39 @@ public class WeatherActivity extends Activity{
         }
         return true;
     }
+
+    class CallBackBroadcast extends BroadcastReceiver {
+        public void onReceive(Context context, Intent intent) {
+            boolean flags = intent.getBooleanExtra("flags",false);
+
+            if(flags) {
+                int index = intent.getIntExtra("index",0);
+                mViePager.setCurrentItem(index);
+            } else {
+                sharedPreferences = getSharedPreferences("cityData", MODE_PRIVATE);
+                int count = sharedPreferences.getInt("count", 0); // 取出
+                List<String> list = new ArrayList<>();
+                for(int i=0; i<count+1; i++) {
+                    list.add(sharedPreferences.getString("data"+i, null));
+                }
+
+                List<MyFragment> myFragments = new ArrayList<>();
+                for(int i=0; i<list.size(); i++) {
+                    myFragments.add(new MyFragment());
+                }
+
+                for(int i=0; i<myFragments.size(); i++) { // 向fragment传递对应城市信息数据
+                    Bundle bundle = new Bundle();
+                    bundle.putString("cityName", list.get(i));
+                    myFragments.get(i).setArguments(bundle);
+                }
+
+                fragAdapter.upDataList(myFragments);
+
+                mViePager.setCurrentItem(myFragments.size()-1);
+            }
+        }
+    }
+
 
 }

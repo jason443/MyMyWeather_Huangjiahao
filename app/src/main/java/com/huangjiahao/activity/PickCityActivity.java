@@ -2,6 +2,7 @@ package com.huangjiahao.activity;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -70,10 +71,33 @@ public class PickCityActivity extends Activity {
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 City city = cities.get(position);
                 String cityName = city.getCityName();
-                Intent intent = new Intent("com.huangjiahao.broadcast.CITYNAME");
+
+                SharedPreferences preferences = getSharedPreferences("cityData",MODE_PRIVATE);
+                boolean flags = false;
+                int index = 0;
+                int count = preferences.getInt("count",0);
+                List<String> list = new ArrayList<>();
+                for(int i=0; i<count+1; i++) {
+                    if(cityName.equals(preferences.getString("data"+i, null))) {
+                        flags = true;
+                        index = i;
+                    }
+                    list.add(preferences.getString("data"+i,null));
+                }
+                count++;
+                list.add(cityName);
+                SharedPreferences.Editor editor = preferences.edit();
+                for(int i=0; i< list.size(); i++) {
+                    editor.putString("data"+i,list.get(i));
+                }
+                editor.putInt("count",count);
+                editor.commit();
+
+                Intent intent = new Intent("com.broadcast.CITY_PICK");
                 localBroadcastManager = LocalBroadcastManager.getInstance(PickCityActivity.this);
-                intent.putExtra("cityName",cityName);
                 localBroadcastManager.sendBroadcast(intent);
+                intent.putExtra("flags", flags);
+                intent.putExtra("index",index);
                 ActivityCollector.finishAll();
                 finish();
             }

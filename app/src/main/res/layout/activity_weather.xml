@@ -4,75 +4,11 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <LinearLayout
-        android:background="#000000"
-        android:layout_width="match_parent"
-        android:layout_height="70dp">
-        <ImageButton
-            android:id="@+id/weatherActivity_bt_finish"
-            android:layout_gravity="center"
-            android:background="#000000"
-            android:src="@drawable/back1"
-            android:layout_width="40sp"
-            android:layout_height="40sp" />
-        <TextView
-            android:id="@+id/weatherActivity_tv_cityName"
-            android:layout_weight="1"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:text="广州"
-            android:gravity="center"
-            android:background="#000000"
-            android:textSize="30sp"
-            android:textColor="#fff"/>
-        <ImageButton
-            android:id="@+id/weatherActivity_bt_menu"
-            android:layout_gravity="center"
-            android:background="#000000"
-            android:src="@drawable/more"
-            android:layout_width="50sp"
-            android:layout_height="40sp" />
-    </LinearLayout>
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="170sp">
-        <ImageView
-            android:id="@+id/weatherActivity_iv_weatherPicture"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:src="@drawable/sunsmile"/>
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="170sp"
-        android:orientation="horizontal">
-        <TextView
-            android:id="@+id/weatherActivity_tv_showWeather"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="今日天气：晴"
-            android:gravity="center"
-            android:textSize="25dp"/>
-    </LinearLayout>
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="120dp">
-        <TextView
-            android:id="@+id/weatherActivity_tv_showTemp"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:text="今日温度：25℃"
-            android:textSize="25dp"
-            android:gravity="center"/>
-    </LinearLayout>
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
-
-
-    </RelativeLayout>
+  <android.support.v4.view.ViewPager
+      android:id="@+id/weather_vp_show"
+      android:layout_gravity="center"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"/>
 
 
 
